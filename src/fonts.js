@@ -281,7 +281,7 @@ function displayFonts(editor, config, fontsList) {
 function addFont(editor, config, fonts, font) {
     const name = font.family
     const value = `"${font.family}", ${font.category}`
-    fonts.push({ name, value, variants: [] })
+    fonts.push({ name, id: name, value, variants: [] })
 }
 
 function removeFont(editor, fonts, font) {
@@ -319,7 +319,7 @@ function updateUi(editor, fonts, opts) {
     } else if (fonts.length === 0) {
         fonts = defaults
     }
-    fontProperty.setOptions(fonts)
+    fontProperty.setOptions(fonts.sort((a, b) => a.id.localeCompare(b.id)))
 }
 
 export function refresh(editor, opts) {
