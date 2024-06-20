@@ -141,6 +141,21 @@ function match(hay, s) {
 const searchInputRef = createRef()
 const fontRef = createRef()
 
+function loadFontForPreview(font) {
+    const doc = document; // or editor.Canvas.getDocument() if inside an iframe
+    const head = doc.head;
+    const styleId = 'dynamic-fonts';
+    let styleTag = head.querySelector(`#${styleId}`);
+    if (!styleTag) {
+        styleTag = doc.createElement('style');
+        styleTag.id = styleId;
+        head.appendChild(styleTag);
+    }
+    styleTag.textContent += `
+        @import url('${fontServer}/css2?family=${font.family.replace(/ /g, '+')}&display=swap');
+    `;
+}
+
 function displayFonts(editor, config, fontsList) {
     const searchInput = searchInputRef.value
     const activeFonts = fontsList.filter(f => match(f.family, searchInput?.value || ''))
@@ -163,16 +178,27 @@ function displayFonts(editor, config, fontsList) {
         //(fontRef.value as HTMLSelectElement).selectedIndex = 0
         setTimeout(() => displayFonts(editor, config, fontsList))
     }}/>
-          <select
-            style=${styleMap({
-        width: '150px',
-    })}
-            ${ref(fontRef)}
-          >
-            ${ map(activeFonts, f => html`
-              <option value=${f['family']}>${f['family']}</option>
-            `)}
-          </select>
+          <div style="display: flex">
+            <select
+                size="10"
+                style=${styleMap({
+            width: '150px',
+        })}
+                ${ref(fontRef)}
+                @change=${() => {
+                    const selectedFont = activeFonts[fontRef.value.selectedIndex];
+                    if (selectedFont) {
+                        document.getElementById("previewText").style.fontFamily = `"${selectedFont.family}", sans-serif`;
+                        loadFontForPreview(selectedFont);
+                    }
+                }}
+            >
+                ${ map(activeFonts, f => html`
+                <option value=${f['family']}>${f['family']}</option>
+                `)}
+            </select>
+            <h2 id="previewText" style="padding: 8px; font-size: 40px;">The quick brown fox jumps over the lazy dog</h2>
+          </div>
           <button class="silex-button"
             ?disabled=${!fontRef.value || activeFonts.length === 0}
             type="button" @click=${() => {
@@ -194,7 +220,7 @@ function displayFonts(editor, config, fontsList) {
         <h2>${editor.I18n.t('grapesjs-fonts.Installed fonts')}</h2>
         <ol class="silex-list">
         ${ map(fonts, f => html`
-          <li>
+          <li style="margin-left: 16px;margin-bottom: 20px;">
             <div class="silex-list__item__header">
               <h4>${f.name}</h4>
             </div>
